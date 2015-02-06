@@ -71,7 +71,7 @@ void Init(){
 	assembler_list = new List<IMyTerminalBlock>();
 	GridTerminalSystem.GetBlocksOfType<IMyAssembler>(assembler_list)
 	
-	container_name_list = new List<string>();
+	container_name_list = new List<String>();
 	for(int i = 0; i < container_list.Count; i++)
 		container_name_list.Add(container_list[i].CustomName);
 	
@@ -87,20 +87,39 @@ void Sort_Container(){
 	for(int i = 0; i < container_list.Count; i++){
 		var inventory = new List<IMyInventoryItem>();
 		inventory = (container_list[i].GetInventory(0)).GetItems();
+		
 		//var container_name = container_list[i].CustomName;
 		
 		for(int j = 0; j < inventory.Count; j++){
 			var Item = GetItemName(inventory[j]);
-			
+			var pos = container_list[i].CustomName.IndexOf(Item);
+			if(pos == -1){//itemname not in containername-> ITEM DOES NOT BELONG IN THAT CONTAINER
+				//get list with all container that have substring of the item name
+				var resultList = container_namer_list.FindAll(delegate(string s) { return s.Contains(Item); });
+			}else if(pos == 0){//string empty for what reason what so ever O.o 
+				
+			}
 		}
 	}
 }
-
-string GetItemName(item IMyInventoryItem){
-	var temp = item.Content.SubtypeName;
-	if(item is Sandbox.Common.ObjectBuilders.MyObjectBuilder_Ore)
-		Concat(temp,"Ore");
-	else if(item is Sandbox.Common.ObjectBuilders.MyObjectBuilder_Ingot)
-		Concant(temp,"Ingot");
+//returns item name if Flag is set => 1 it returns full name of ore or ingot
+///<param name="item"> Item to get name from
+///<param name="flag"> Concat flag adds Ore/Ingot behind items (if not set returns only Ore/Ingot definition and not the SubtypeName)
+String GetItemName(IMyInventoryItem item, bool flag){
+	String temp;
+	if(flag){
+		temp = item.Content.SubtypeName;
+		if(item is Sandbox.Common.ObjectBuilders.MyObjectBuilder_Ore)
+			Concat(temp,"Ore");
+		else if(item is Sandbox.Common.ObjectBuilders.MyObjectBuilder_Ingot)
+			Concant(temp,"Ingot");
+	}else{
+		if(item is Sandbox.Common.ObjectBuilders.MyObjectBuilder_Ore)
+			temp = "ore";
+		else if(item is Sandbox.Common.ObjectBuilders.MyObjectBuilder_Ingot)
+			temp = "Ingot";
+		else
+			temp = item.Content.SubtypeName;
+	}
 	return temp;
 }
