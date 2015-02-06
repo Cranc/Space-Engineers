@@ -1,10 +1,13 @@
+//Flags
+const bool CONCAT = true;
+
 //List
 var container_list;
 var refinery_list;
 var assembler_list;
 var connector_list;
 
-var container_name_list;
+var dict;
 
 //weight for assembler input
 const float Weight_Iron = 0.1f;
@@ -71,11 +74,10 @@ void Init(){
 	assembler_list = new List<IMyTerminalBlock>();
 	GridTerminalSystem.GetBlocksOfType<IMyAssembler>(assembler_list)
 	
-	container_name_list = new List<String>();
-	for(int i = 0; i < container_list.Count; i++)
-		container_name_list.Add(container_list[i].CustomName);
+	dict = new Dictionary<string, List<IMyInventory>>();
 	
-	
+	InitDictionaryKeys();
+	InitDictionaryList();
 }
 void Main(){
 
@@ -90,23 +92,25 @@ void Sort_Container(){
 		
 		//var container_name = container_list[i].CustomName;
 		
-		for(int j = 0; j < inventory.Count; j++){
-			var Item = GetItemName(inventory[j]);
-			var pos = container_list[i].CustomName.IndexOf(Item);
-			if(pos == -1){//itemname not in containername-> ITEM DOES NOT BELONG IN THAT CONTAINER
-				//get list with all container that have substring of the item name
-				var resultList = container_namer_list.FindAll(delegate(string s) { return s.Contains(Item); });
-			}else if(pos == 0){//string empty for what reason what so ever O.o 
-				
+		for(int j = inventory.Count; j >= 0; j--){
+			var Itemname = GetItemName(inventory[j],CONCAT);
+			if(dict.ContainsKey(itemname)){
+				for(int k = 0; k < dict[itemname].Count; k++){
+					var targetinventory = dict[itemname][k];
+					inventory.TransferItemsTo(targetinventory,j,stackIfPossible: true);
+					if(inventory[j] == null || inventory.Amount == 0)
+						break;
+				}
 			}
 		}
 	}
 }
+
 //returns item name if Flag is set => 1 it returns full name of ore or ingot
 ///<param name="item"> Item to get name from
 ///<param name="flag"> Concat flag adds Ore/Ingot behind items (if not set returns only Ore/Ingot definition and not the SubtypeName)
-String GetItemName(IMyInventoryItem item, bool flag){
-	String temp;
+string GetItemName(IMyInventoryItem item, bool flag){
+	string temp;
 	if(flag){
 		temp = item.Content.SubtypeName;
 		if(item is Sandbox.Common.ObjectBuilders.MyObjectBuilder_Ore)
@@ -122,4 +126,81 @@ String GetItemName(IMyInventoryItem item, bool flag){
 			temp = item.Content.SubtypeName;
 	}
 	return temp;
+}
+void InitDictionaryKeys(){
+	//add keys from Container
+	for(int i = 0; i < container_list.Count; i++){
+		var inventory = new List<IMyInventoryItem>();
+		inventory = (container_list[i].GetInventory(0)).GetItems();
+		for(int j = 0; j < inventory.Count; j++){
+			var name = GetItemName(inventory[i], CONCAT);
+			AddToDictionary(name);
+		}
+	}
+	//add keys from Connector
+	for(int i = 0; i < connector_list.Count; i++){
+		var inventory = new List<IMyInventoryItem>();
+		inventory = (connector_list[i].GetInventory(0)).GetItems();
+		for(int j = 0; j < inventory.Count; j++){
+			var name = GetItemName(inventory[i], CONCAT);
+			AddToDictionary(name);
+		}
+	}
+	//add keys from Refinery
+	for(int i = 0; i < refinery_list; i++){
+		var inventory = new List<IMyInventoryItem>();
+		inventory = (refinery_list[i].GetInventory(0)).GetItems();
+		for(int j = 0; j < inventory.Count; j++){
+			var name = GetItemName(inventory[i], CONCAT);
+			AddToDictionary(name);
+		}
+		inventory = (refinery_list[i].GetInventory(1)).GetItems();
+		for(int j = 0; j < inventory.Count; j++){
+			var name = GetItemName(inventory[i], CONCAT);
+			AddToDictionary(name);
+		}
+	}
+	//add keys from Assembler
+	for(int i = 0; i < refinery_list; i++){
+		var inventory = new List<IMyInventoryItem>();
+		inventory = (assembler_list[i].GetInventory(0)).GetItems();
+		for(int j = 0; j < inventory.Count; j++){
+			var name = GetItemName(inventory[i], CONCAT);
+			AddToDictionary(name);
+		}
+		inventory = (assembler_list[i].GetInventory(1)).GetItems();
+		for(int j = 0; j < inventory.Count; j++){
+			var name = GetItemName(inventory[i], CONCAT);
+			AddToDictionary(name);
+		}
+	}
+}
+void InitDictionaryList(){
+	for(int i = 0; i < container_list.Count; i++){
+		var name = container_list[i].CustomName();
+		var keyenum = (IEnumerator<string>)dict.Keys.GetEnumerator();
+		while(keyenum.MoveNext()){
+			if(name.Contains(keyenum.Current,StringComparison.OrdinalIgnoreCase)){
+				AddToDictionary(keyenum.Current,container_list[i].GetInventory(0));
+			}
+		}
+	}
+}
+///<param name="item"> name of key
+///<param name="inv"> inventory
+void AddToDictionary(string item, IMyInventory inv)
+{
+    if(!dict.ContainsKey(item))
+    {
+         dict.Add(item, new List<IMyInventory>());
+    }
+    dict[item].Add(inv);
+}
+///<param name="item"> name of key
+void AddToDictionary(string item)
+{
+    if(!dict.ContainsKey(item))
+    {
+         dict.Add(item, new List<IMyInventory>());
+    }
 }
