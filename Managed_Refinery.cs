@@ -26,18 +26,14 @@ void Main()
             var inv_two = mySortList[end].Key.GetInventory(0);
 
             if( inv_one.IsConnectedTo(inv_two)) {
-                //debug_list[0].SetCustomName(debug_list[0].CustomName + "inventory is connected ...");
-                var itemList = new List<IMyInventoryItem>();
-                mySortList[start].Key.GetInventory(0).GetItems();
-
-                var theresult = mySortList[start].Key.GetInventory(0).TransferItemTo(
-                    mySortList[end].Key.GetInventory(0),
+                var theresult = inv_one.TransferItemTo(
+                    inv_two,
                     0,
                     stackIfPossible: true,
                     amount: (VRage.MyFixedPoint)dif
                 );
             }else{
-                //throw new Exception("inventorys not connected");
+                throw new Exception("inventorys not connected");
             }
             end--;
         }
